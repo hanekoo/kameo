@@ -404,7 +404,7 @@ where
     if let Err(err) = start_res {
         let reason = ActorStopReason::Panicked(err);
         let mut state = S::new_from_actor(actor, actor_ref.clone());
-        let reason = state.on_shutdown(reason.clone()).await.unwrap_or(reason);
+        let (reason,_) = state.on_shutdown(reason.clone()).await.unwrap_or((reason,true));
         let mut actor = state.shutdown().await;
         actor
             .on_stop(actor_ref.clone(), reason.clone())
@@ -456,8 +456,8 @@ where
     }
     loop {
         let reason = recv_mailbox_loop(state, &mut mailbox_rx, &startup_semaphore).await;
-        if let Some(reason) = state.on_shutdown(reason).await {
-            return reason;
+        if let Some((reason,panic_and_stop)) = state.on_shutdown(reason).await {
+            if panic_and_stop { return reason }
         }
     }
 }

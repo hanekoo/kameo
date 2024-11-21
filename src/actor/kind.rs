@@ -36,7 +36,7 @@ pub(crate) trait ActorState<A: Actor>: Sized {
     fn on_shutdown(
         &mut self,
         reason: ActorStopReason,
-    ) -> impl Future<Output = Option<ActorStopReason>> + Send;
+    ) -> impl Future<Output = Option<(ActorStopReason,bool)>> + Send;
 
     fn shutdown(self) -> impl Future<Output = A> + Send;
 }
@@ -141,19 +141,19 @@ where
     }
 
     #[inline]
-    async fn on_shutdown(&mut self, reason: ActorStopReason) -> Option<ActorStopReason> {
+    async fn on_shutdown(&mut self, reason: ActorStopReason) -> Option<(ActorStopReason,bool)> {
         match reason {
-            ActorStopReason::Normal => Some(ActorStopReason::Normal),
-            ActorStopReason::Killed => Some(ActorStopReason::Killed),
+            ActorStopReason::Normal => Some((ActorStopReason::Normal,true)),
+            ActorStopReason::Killed => Some((ActorStopReason::Killed,true)),
             ActorStopReason::Panicked(err) => {
                 match self.state.on_panic(self.actor_ref.clone(), err).await {
-                    Ok(Some(reason)) => Some(reason),
+                    Ok(Some((reason,panic_and_stop))) => Some((reason,panic_and_stop)),
                     Ok(None) => None,
-                    Err(err) => Some(ActorStopReason::Panicked(PanicError::new(err))),
+                    Err(err) => Some((ActorStopReason::Panicked(PanicError::new(err)),true)),
                 }
             }
             ActorStopReason::LinkDied { id, reason } => {
-                Some(ActorStopReason::LinkDied { id, reason })
+                Some((ActorStopReason::LinkDied { id, reason },true))
             }
         }
     }

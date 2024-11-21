@@ -165,8 +165,8 @@ pub trait Actor: Sized + Send + 'static {
         &mut self,
         actor_ref: WeakActorRef<Self>,
         err: PanicError,
-    ) -> impl Future<Output = Result<Option<ActorStopReason>, BoxError>> + Send {
-        async move { Ok(Some(ActorStopReason::Panicked(err))) }
+    ) -> impl Future<Output = Result<Option<(ActorStopReason,bool)>, BoxError>> + Send {
+        async move { Ok(Some((ActorStopReason::Panicked(err),true))) }
     }
 
     /// Called when a linked actor dies.
