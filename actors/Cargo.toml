@@ -12,3 +12,4 @@ keywords = ["actor", "tokio"]
 [dependencies]
 futures.workspace = true
 kameo.workspace = true
+parking_lot = "0.12.3"
